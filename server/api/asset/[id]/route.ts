@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 export const runtime = "edge";
 const MAX = 25 * 1024 * 1024;
-function error(message: string, status: number) { return NextResponse.json({ error: message }, { status, headers: { "Cache-Control": "no-store" } }); }
+const CORS = { "Access-Control-Allow-Origin": "https://luxbiter.github.io", "Access-Control-Allow-Methods": "GET, OPTIONS", "Access-Control-Expose-Headers": "X-Asset-Extension", "Vary": "Origin" };
+function error(message: string, status: number) { return NextResponse.json({ error: message }, { status, headers: { "Cache-Control": "no-store", ...CORS } }); }
+export function OPTIONS() { return new Response(null, { status: 204, headers: CORS }); }
 function allowed(url: string) {
   try { const u = new URL(url); return u.protocol === "https:" && !u.username && !u.password &&
     (u.hostname === "rbxcdn.com" || u.hostname.endsWith(".rbxcdn.com") || u.hostname === "roblox.com" || u.hostname.endsWith(".roblox.com")); }
@@ -35,6 +37,6 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
     const data = await asset.arrayBuffer();
     if (data.byteLength > MAX) return error("Files over 25 MB are not supported.", 413);
     const ext = extension(new Uint8Array(data));
-    return new Response(data, { headers: { "Content-Type": "application/octet-stream", "Content-Disposition": `attachment; filename="${id}.${ext}"`, "X-Asset-Extension": ext, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+    return new Response(data, { headers: { "Content-Type": "application/octet-stream", "Content-Disposition": `attachment; filename="${id}.${ext}"`, "X-Asset-Extension": ext, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...CORS } });
   } catch { return error("Could not reach Roblox. Please try again later.", 502); }
 }

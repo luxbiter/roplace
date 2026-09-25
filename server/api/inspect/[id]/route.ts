@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { extractAssetIds } from "@/lib/asset-ids";
 export const runtime = "edge";
 const MAX = 25 * 1024 * 1024;
-const fail = (error: string, status = 502) => NextResponse.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
+const CORS = { "Access-Control-Allow-Origin": "https://luxbiter.github.io", "Access-Control-Allow-Methods": "GET, OPTIONS", "Vary": "Origin" };
+const fail = (error: string, status = 502) => NextResponse.json({ error }, { status, headers: { "Cache-Control": "no-store", ...CORS } });
+export function OPTIONS() { return new Response(null, { status: 204, headers: CORS }); }
 function allowed(url: string) {
   try { const u = new URL(url); return u.protocol === "https:" && !u.username && !u.password &&
     (u.hostname === "rbxcdn.com" || u.hostname.endsWith(".rbxcdn.com") || u.hostname === "roblox.com" || u.hostname.endsWith(".roblox.com")); }
@@ -22,7 +24,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
     if (Number(response.headers.get("content-length")) > MAX) return fail("Assets over 25 MB cannot be inspected.", 413);
     const data = await response.arrayBuffer();
     if (data.byteLength > MAX) return fail("Assets over 25 MB cannot be inspected.", 413);
-    try { return NextResponse.json(extractAssetIds(new Uint8Array(data)), { headers: { "Cache-Control": "no-store" } }); }
+    try { return NextResponse.json(extractAssetIds(new Uint8Array(data)), { headers: { "Cache-Control": "no-store", ...CORS } }); }
     catch (e) { return fail(e instanceof Error ? e.message : "Could not inspect this asset.", 422); }
   } catch { return fail("Could not reach Roblox. Please try again later."); }
 }

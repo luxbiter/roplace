@@ -1,21 +1,9 @@
 # roplace
 
-Find mesh and texture IDs referenced by public Roblox Marketplace model assets, and download public Roblox asset files by ID.
+Find mesh and texture IDs in public Roblox Marketplace model assets and download original asset files.
 
-## Run locally
+Website: https://luxbiter.github.io/roplace/
 
-Requires Node.js 22 or later.
+GitHub Pages serves `index.html` and `favicon.svg` from the `main` branch root. The browser calls the public API at `https://roblox-asset-fetcher.si-le.chatgpt.site`; GitHub Pages itself cannot run server code. The API source and model parser are in `server/api/` and `lib/`.
 
-```bash
-npm install
-npm run dev
-```
-
-Open http://localhost:3000. For a production build, run `npm run build` and `npm start`.
-
-## Notes
-
-- Marketplace IDs and underlying file IDs can differ. The lookup reads publicly available XML or binary model files and lists the IDs it finds.
-- Private, restricted, and unsupported assets may not return IDs. Not all Marketplace items contain mesh and texture references.
-- Downloaded meshes remain in Roblox's native format; the site does not convert them to OBJ or FBX.
-- Requests are limited to 25 MB per file. No Roblox login or cookie is required.
+Only public assets are supported. Items without mesh or texture references return empty results. Files over 25 MB are rejected. Mesh files remain in Roblox's native format.
