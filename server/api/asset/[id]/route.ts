@@ -30,9 +30,8 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
     if (!metadata.ok) return error(`Roblox rejected the asset request (HTTP ${metadata.status}).`, metadata.status === 404 ? 404 : 502);
     const json = await metadata.json() as { locations?: Array<{ location?: string }> };
     const url = json.locations?.map(x => x.location).find((x): x is string => typeof x === "string" && allowed(x));
-    if (!url) return error("No download location. Check the asset ID and access.", 404);
-    const asset = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(20000) });
-    if (!asset.ok || !allowed(asset.url)) return error("Could not fetch the file.", 502);
+    const asset = await fetch(url || `https://assetdelivery.roblox.com/v1/asset?id=${id}`, { cache: "no-store", signal: AbortSignal.timeout(20000) });
+    if (!asset.ok || !allowed(asset.url)) return error(asset.status === 401 || asset.status === 403 ? "Roblox requires access to this asset. Classic clothing template IDs cannot be retrieved here." : "Could not fetch the file.", asset.status === 401 || asset.status === 403 ? 403 : 502);
     if (Number(asset.headers.get("content-length")) > MAX) return error("Files over 25 MB are not supported.", 413);
     const data = await asset.arrayBuffer();
     if (data.byteLength > MAX) return error("Files over 25 MB are not supported.", 413);

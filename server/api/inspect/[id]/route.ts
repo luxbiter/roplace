@@ -18,9 +18,9 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
     if (!metadata.ok) return fail(`Roblox rejected the request (HTTP ${metadata.status}).`, metadata.status === 404 ? 404 : 502);
     const json = await metadata.json() as { locations?: Array<{ location?: string }> };
     const url = json.locations?.map(x => x.location).find((x): x is string => typeof x === "string" && allowed(x));
-    if (!url) return fail("Public asset unavailable.", 404);
-    const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(20000) });
-    if (!response.ok || !allowed(response.url)) return fail("Could not fetch the model file.");
+    // Classic clothing can have no v2 location even when the legacy public asset is readable.
+    const response = await fetch(url || `https://assetdelivery.roblox.com/v1/asset?id=${id}`, { cache: "no-store", signal: AbortSignal.timeout(20000) });
+    if (!response.ok || !allowed(response.url)) return fail(response.status === 401 || response.status === 403 ? "Roblox requires access to this asset. Classic clothing template IDs cannot be retrieved here." : "Could not fetch the file.", response.status === 401 || response.status === 403 ? 403 : 502);
     if (Number(response.headers.get("content-length")) > MAX) return fail("Assets over 25 MB cannot be inspected.", 413);
     const data = await response.arrayBuffer();
     if (data.byteLength > MAX) return fail("Assets over 25 MB cannot be inspected.", 413);
